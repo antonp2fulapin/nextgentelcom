@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { isBusinessEmail } from "@/lib/validation";
+import { isBusinessEmail } from "../../lib/validation";
 
 type FormErrors = Partial<Record<string, string>>;
 
@@ -80,7 +80,7 @@ export default function ContactForm() {
       });
 
       if (!response.ok) {
-        const payload = await response.json();
+        const payload = await response.json().catch(() => null);
         setStatus("error");
         setStatusMessage(
           payload?.message ||
@@ -106,7 +106,6 @@ export default function ContactForm() {
     <form
       className="space-y-8 rounded-3xl border border-slate-800 bg-slate-900/60 p-8"
       onSubmit={handleSubmit}
-      noValidate
     >
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-2">

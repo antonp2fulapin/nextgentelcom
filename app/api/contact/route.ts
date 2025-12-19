@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { isBusinessEmail } from "@/lib/validation";
+import { isBusinessEmail } from "../../../lib/validation";
 
-const BACKEND_ENDPOINT = "https://api.placeholder.example/telecom/apply";
+const BACKEND_ENDPOINT =
+  process.env.CONTACT_FORM_ENDPOINT ||
+  "https://api.placeholder.example/telecom/apply";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -27,6 +29,15 @@ export async function POST(request: Request) {
   if (!companyName || !companyWebsite || !businessEmail || !country || !useCase) {
     return NextResponse.json(
       { message: "Please complete all required fields." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    new URL(String(companyWebsite));
+  } catch {
+    return NextResponse.json(
+      { message: "Please provide a valid company website URL." },
       { status: 400 },
     );
   }
