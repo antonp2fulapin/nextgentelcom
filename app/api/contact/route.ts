@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { isBusinessEmail } from "../../../lib/validation";
 
-const BACKEND_ENDPOINT =
-  process.env.CONTACT_FORM_ENDPOINT ||
-  "https://api.placeholder.example/telecom/apply";
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -63,6 +62,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    return NextResponse.json(
+      { message: "Submission service is not configured." },
+      { status: 500 },
+    );
+  }
+
   const payload = {
     companyName: String(companyName),
     companyWebsite: String(companyWebsite),
@@ -74,13 +80,30 @@ export async function POST(request: Request) {
     consent: Boolean(consent),
   };
 
-  const backendResponse = await fetch(BACKEND_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const messageLines = [
+    "New telecom application received:",
+    `Company: ${payload.companyName}`,
+    `Website: ${payload.companyWebsite}`,
+    `Business email: ${payload.businessEmail}`,
+    `Phone: ${payload.phoneNumber || "Not provided"}`,
+    `Country: ${payload.country}`,
+    `Expected volume: ${payload.expectedVolume}`,
+    `Use case: ${payload.useCase}`,
+  ];
 
-  if (!backendResponse.ok) {
+  const telegramResponse = await fetch(
+    `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: messageLines.join("\n"),
+      }),
+    },
+  );
+
+  if (!telegramResponse.ok) {
     return NextResponse.json(
       { message: "We could not submit your application. Please try again." },
       { status: 502 },
